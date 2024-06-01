@@ -1,9 +1,10 @@
 {
   "name": "exif-js",
-  "version": "2.3.0",
+  "version": "3.0.0-alpha",
   "description": "JavaScript library for reading EXIF image metadata",
-  "main": "./lib/umd/main.js",
+  "main": "exif.js",
   "typings": "./lib/umd/main.d.ts",
+  "module": "./lib/esm/main.js",
   "directories": {
     "example": "example"
   },
@@ -24,10 +25,14 @@
   },
   "homepage": "https://github.com/exif-js/exif-js",
   "devDependencies": {
+    "@types/node": "^16.x",
+    "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
-    "@types/node": "^16.x"
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   },
   "scripts": {
-    "compile": "tsc -p ./src"
+    "compile": "webpack",
+    "compile-esm": "tsc -p ./src/tsconfig.esm.json"
   }
 }

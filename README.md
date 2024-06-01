@@ -12,10 +12,6 @@ Install `exif-js` through [NPM](https://www.npmjs.com/#getting-started):
 
     npm install exif-js --save    
 
-Or [Bower](http://bower.io/):
-
-    bower install exif-js --save
-
 Then add a `script` tag in your an HTML in the [best position](http://stackoverflow.com/questions/436411/where-is-the-best-place-to-put-script-tags-in-html-markup) referencing your local file.
 
 ```html
@@ -86,6 +82,15 @@ Check the included [index.html](/exif-js/exif-js/blob/master/index.html).
 Since issue #53 was merged also extracting of XMP data is supported. To not slow down this is optional, and you need to call `EXIF.enableXmp();` before using `EXIF.getData()`.
 
 Please refer to the [source code](exif.js) for more advanced usages such as getting image data from a [File/Blob](https://developer.mozilla.org/en/docs/Web/API/Blob) object (`EXIF.readFromBinaryFile`).
+
+## Building
+The new TypeScript version is compatible with exif.js 2.x and can be built using Webpack:
+
+    npm run compile
+
+An ESM version can be obtained using:
+
+    npm run compile-esm
 
 ## Contributions
 This is an [open source project](LICENSE.md). Please contribute by forking this repo and issueing a pull request. The project has had notable contributions already, like reading ITPC data.
