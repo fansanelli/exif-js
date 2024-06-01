@@ -2,8 +2,8 @@
   "name": "exif-js",
   "version": "2.3.0",
   "description": "JavaScript library for reading EXIF image metadata",
-  "main": "exif.js",
-  "types": "exif.d.ts",
+  "main": "./lib/umd/main.js",
+  "typings": "./lib/umd/main.d.ts",
   "directories": {
     "example": "example"
   },
@@ -23,17 +23,11 @@
     "url": "https://github.com/exif-js/exif-js/issues"
   },
   "homepage": "https://github.com/exif-js/exif-js",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests",
-    "spec",
-    "example"
-  ],
   "devDependencies": {
-    "bower": "^1.4.2",
-    "mversion": "^1.10.0"
+    "typescript": "^5.3.3",
+    "@types/node": "^16.x"
+  },
+  "scripts": {
+    "compile": "tsc -p ./src"
   }
 }
