@@ -376,7 +376,7 @@ export function getImageData(img: ExifDataImage, callback: Function) {
                 if (this.status == 200 || this.status === 0) {
                     handleBinaryFile(http.response);
                 } else {
-                    throw "Could not load image";
+                    throw new Error("Could not load image");
                 }
             };
             http.open("GET", img.src, true);
@@ -467,7 +467,7 @@ function findIPTCinJPEG(file: ArrayBuffer): object | null {
         offset++;
 
     }
-    return null
+    return null;
 
 }
 const IptcFieldMap: { [id: number]: string } = {
@@ -644,7 +644,7 @@ function readThumbnailImage(dataView: DataView, tiffStart: number, firstIFDOffse
     }
     // console.log('*******  thumbnail IFD offset (IFD1) is: %s', IFD1OffsetPointer);
 
-    var thumbTags = readTags(dataView, tiffStart, tiffStart + IFD1OffsetPointer, IFD1Tags, bigEnd)
+    var thumbTags = readTags(dataView, tiffStart, tiffStart + IFD1OffsetPointer, IFD1Tags, bigEnd);
 
     // EXIF 2.3 specification for JPEG format thumbnail
 
@@ -800,11 +800,11 @@ export function findXMPinJPEG(file: ArrayBuffer): object | string | null {
         if (getStringFromDB(dataView, offset, 4) == "http") {
             const startOffset = offset - 1;
             const sectionLength = dataView.getUint16(offset - 2) - 1;
-            let xmpString = getStringFromDB(dataView, startOffset, sectionLength)
+            let xmpString = getStringFromDB(dataView, startOffset, sectionLength);
             const xmpEndIndex = xmpString.indexOf('xmpmeta>') + 8;
             xmpString = xmpString.substring(xmpString.indexOf('<x:xmpmeta'), xmpEndIndex);
 
-            const indexOfXmp = xmpString.indexOf('x:xmpmeta') + 10
+            const indexOfXmp = xmpString.indexOf('x:xmpmeta') + 10;
             //Many custom written programs embed xmp/xml without any namespace. Following are some of them.
             //Without these namespaces, XML is thought to be invalid by parsers
             xmpString = xmpString.slice(0, indexOfXmp)
@@ -819,7 +819,7 @@ export function findXMPinJPEG(file: ArrayBuffer): object | string | null {
                 + 'xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/" '
                 + 'xmlns:xapGImg="http://ns.adobe.com/xap/1.0/g/img/" '
                 + 'xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/" '
-                + xmpString.slice(indexOfXmp)
+                + xmpString.slice(indexOfXmp);
 
             const domDocument = dom.parseFromString(xmpString, 'text/xml');
             return xml2Object(domDocument);
