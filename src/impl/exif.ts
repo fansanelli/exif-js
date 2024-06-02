@@ -1,6 +1,8 @@
 'use strict';
 
-export const Tags: { [id: number]: string } = {
+import { xml2json } from 'xml-js';
+
+export const ExifTags: { [id: number]: string } = {
     // version tags
     0x9000: "ExifVersion",             // EXIF version
     0xA000: "FlashpixVersion",         // Flashpix format version
@@ -307,10 +309,26 @@ export const StringValues: { [key: string]: { [id: number]: string } } = {
     }
 } as const;
 
+/**
+ * Tells if getImageData should gather Xmp informations
+ */
+let isXmpEnabled = false;
+
+export function enableXmp(): void {
+    isXmpEnabled = true;
+}
+
+export function disableXmp(): void {
+    isXmpEnabled = false;
+}
+
+/**
+ * Represents the image extended with Exif
+ */
 interface ExifDataImage extends HTMLImageElement {
-    exifdata: object | string | null
-    iptcdata: object | string | null
-    xmpdata: object | string | null
+    exifdata: object | undefined
+    iptcdata: object | undefined
+    xmpdata: object | undefined
 }
 
 export function imageHasData(img: ExifDataImage): boolean {
@@ -392,18 +410,18 @@ export function getImageData(img: ExifDataImage, callback: Function) {
     }
 }
 
-export function findEXIFinJPEG(file: ArrayBuffer) {
+export function findEXIFinJPEG(file: ArrayBuffer): object | null {
     const dataView = new DataView(file);
 
     if ((dataView.getUint8(0) != 0xFF) || (dataView.getUint8(1) != 0xD8)) {
-        return false; // not a valid jpeg
+        return null; // not a valid jpeg
     }
 
     let offset = 2;
     const length = file.byteLength;
     while (offset < length) {
         if (dataView.getUint8(offset) != 0xFF) {
-            return false; // not a valid marker, something is wrong
+            return null; // not a valid marker, something is wrong
         }
 
         const marker = dataView.getUint8(offset + 1);
@@ -416,9 +434,8 @@ export function findEXIFinJPEG(file: ArrayBuffer) {
         } else {
             offset += 2 + dataView.getUint16(offset + 2);
         }
-
     }
-
+    return null;
 }
 
 function findIPTCinJPEG(file: ArrayBuffer): object | null {
@@ -443,7 +460,6 @@ function findIPTCinJPEG(file: ArrayBuffer): object | null {
     };
 
     while (offset < length) {
-
         if (isFieldSegmentStart(dataView, offset)) {
 
             // Get the length of the name header (which is padded to an even number of bytes)
@@ -618,7 +634,7 @@ function readTagValue(file: DataView, entryOffset: number, tiffStart: number, di
 * Given an IFD (Image File Directory) start offset
 * returns an offset to next IFD or 0 if it's the last IFD.
 */
-function getNextIFDOffset(dataView: DataView, dirStart: number, bigEnd: boolean) {
+function getNextIFDOffset(dataView: DataView, dirStart: number, bigEnd: boolean): number {
     //the first 2bytes means the number of directory entries contains in this IFD
     const entries = dataView.getUint16(dirStart, !bigEnd);
 
@@ -629,7 +645,7 @@ function getNextIFDOffset(dataView: DataView, dirStart: number, bigEnd: boolean)
     return dataView.getUint32(dirStart + 2 + entries * 12, !bigEnd); // each entry is 12 bytes long
 }
 
-function readThumbnailImage(dataView: DataView, tiffStart: number, firstIFDOffset: number, bigEnd: boolean) {
+function readThumbnailImage(dataView: DataView, tiffStart: number, firstIFDOffset: number, bigEnd: boolean): object {
     // get the IFD1 offset
     const IFD1OffsetPointer = getNextIFDOffset(dataView, tiffStart + firstIFDOffset, bigEnd);
 
@@ -690,9 +706,9 @@ function getStringFromDB(buffer: DataView, start: number, length: number): strin
     return outstr;
 }
 
-function readEXIFData(file: DataView, start: number) {
+function readEXIFData(file: DataView, start: number): object | null {
     if (getStringFromDB(file, start, 4) != "Exif") {
-        return false;
+        return null;
     }
 
     let bigEnd;
@@ -703,23 +719,21 @@ function readEXIFData(file: DataView, start: number) {
     } else if (file.getUint16(tiffOffset) == 0x4D4D) {
         bigEnd = true;
     } else {
-        return false;
+        return null;
     }
 
     if (file.getUint16(tiffOffset + 2, !bigEnd) != 0x002A) {
-        return false;
+        return null;
     }
 
     const firstIFDOffset = file.getUint32(tiffOffset + 4, !bigEnd);
-
     if (firstIFDOffset < 0x00000008) {
-        return false;
+        return null;
     }
 
     const tags = readTags(file, tiffOffset, tiffOffset + firstIFDOffset, TiffTags, bigEnd);
-
     if (tags.ExifIFDPointer) {
-        const exifData = readTags(file, tiffOffset, tiffOffset + tags.ExifIFDPointer, Tags, bigEnd);
+        const exifData = readTags(file, tiffOffset, tiffOffset + tags.ExifIFDPointer, ExifTags, bigEnd);
         for (const tag in exifData) {
             switch (tag) {
                 case "LightSource":
@@ -778,12 +792,7 @@ function readEXIFData(file: DataView, start: number) {
     return tags;
 }
 
-export function findXMPinJPEG(file: ArrayBuffer): object | string | null {
-    if (!('DOMParser' in self)) {
-        // console.warn('XML parsing not supported without DOMParser');
-        return null;
-    }
-
+export function findXMPinJPEG(file: ArrayBuffer): object | null {
     const dataView = new DataView(file);
     if ((dataView.getUint8(0) != 0xFF) || (dataView.getUint8(1) != 0xD8)) {
         return null; // not a valid jpeg
@@ -791,7 +800,6 @@ export function findXMPinJPEG(file: ArrayBuffer): object | string | null {
 
     let offset = 2;
     const length = file.byteLength;
-    const dom = new DOMParser();
     while (offset < (length - 4)) {
         if (getStringFromDB(dataView, offset, 4) == "http") {
             const startOffset = offset - 1;
@@ -816,103 +824,10 @@ export function findXMPinJPEG(file: ArrayBuffer): object | string | null {
                 + 'xmlns:xapGImg="http://ns.adobe.com/xap/1.0/g/img/" '
                 + 'xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/" '
                 + xmpString.slice(indexOfXmp);
-
-            const domDocument = dom.parseFromString(xmpString, 'text/xml');
-            return xml2Object(domDocument);
+            return JSON.parse(xml2json(xmpString, { compact: true }));
         } else {
             offset++;
         }
     }
     return null;
 }
-
-function xml2json(xml: Element): object | string | null {
-    const json: { [tag: string]: any } = {};
-
-    if (xml.nodeType == 1) { // element node
-        if (xml.attributes.length > 0) {
-            json['@attributes'] = {};
-            for (let j = 0; j < xml.attributes.length; j++) {
-                const attribute = xml.attributes.item(j);
-                if (attribute) {
-                    json['@attributes'][attribute.nodeName] = attribute.nodeValue;
-                }
-            }
-        }
-    } else if (xml.nodeType == 3) { // text node
-        return xml.nodeValue;
-    }
-
-    // deal with children
-    /*
-    if (xml.hasChildNodes()) {
-        for (let i = 0; i < xml.childNodes.length; i++) {
-            const child = xml.childNodes.item(i);
-            const nodeName = child.nodeName;
-            if (json[nodeName] == null) {
-                json[nodeName] = xml2json(child);
-            } else {
-                if (json[nodeName].push == null) {
-                    const old = json[nodeName];
-                    json[nodeName] = [];
-                    json[nodeName].push(old);
-                }
-                json[nodeName].push(xml2json(child));
-            }
-        }
-    }*/
-
-    return json;
-}
-
-function xml2Object(xml: Document): object | string | null {
-    try {
-        if (xml.children.length > 0) {
-            const obj: { [id: string]: any } = {};
-            for (let i = 0; i < xml.children.length; i++) {
-                const item = xml.children.item(i);
-                const attributes = item!.attributes;
-                for (const idx in attributes) {
-                    const itemAtt = attributes[idx];
-                    const dataKey = itemAtt.nodeName;
-                    const dataValue = itemAtt.nodeValue;
-
-                    if (dataKey !== undefined) {
-                        obj[dataKey] = dataValue;
-                    }
-                }
-                const nodeName = item!.nodeName;
-                if (nodeName) {
-                    if (typeof (obj[nodeName]) == "undefined") {
-                        obj[nodeName] = xml2json(item!);
-                    } else {
-                        if (typeof (obj[nodeName].push) == "undefined") {
-                            const old = obj[nodeName];
-
-                            obj[nodeName] = [];
-                            obj[nodeName].push(old);
-                        }
-                        obj[nodeName].push(xml2json(item!));
-                    }
-                }
-            }
-            return obj;
-        } else {
-            return xml.textContent;
-        }
-    } catch (e: any) {
-        console.log(e.message);
-    }
-    return null;
-}
-
-export let isXmpEnabled = false;
-
-export function enableXmp(): void {
-    isXmpEnabled = true;
-}
-
-export function disableXmp(): void {
-    isXmpEnabled = false;
-}
-

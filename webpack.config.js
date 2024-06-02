@@ -19,7 +19,11 @@ const config = {
     libraryTarget: "umd"
   },
   resolve: {
-    extensions: [".ts"],
+    extensions: [".ts", ".js"],
+    fallback: {
+      "stream": false,
+      "string_decoder": false
+    },  
   },
   plugins: []
 };

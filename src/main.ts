@@ -2,6 +2,12 @@
 
 import * as exif from './impl/exif';
 
+export const Tags: any = exif.ExifTags;
+export const TiffTags: any = exif.TiffTags;
+export const GPSTags: any = exif.GPSTags;
+export const IFD1Tags: any = exif.IFD1Tags;
+export const StringValues: any = exif.StringValues;
+
 export function enableXmp(): void {
   exif.enableXmp();
 }

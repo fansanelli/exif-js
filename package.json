@@ -37,5 +37,8 @@
   "scripts": {
     "compile": "webpack",
     "compile-esm": "tsc -p ./src/tsconfig.esm.json"
+  },
+  "dependencies": {
+    "xml-js": "^1.6.11"
   }
 }
