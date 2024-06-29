@@ -35,10 +35,14 @@
     "webpack-cli": "^5.1.4"
   },
   "scripts": {
+    "clean": "rm -rf ./lib",
     "compile": "webpack",
     "compile-esm": "tsc -p ./src/tsconfig.esm.json"
   },
   "dependencies": {
     "xml-js": "^1.6.11"
-  }
+  },
+  "files": [
+    "lib/esm/*"
+  ]
 }

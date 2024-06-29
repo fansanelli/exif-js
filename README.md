@@ -92,6 +92,24 @@ An ESM version can be obtained using:
 
     npm run compile-esm
 
+## Using the ESM Module
+
+    npm run clean
+
+    npm run compile-esm
+
+    npm pack
+
+Then you can move it in your repo and install it:
+
+    npm install exif-js-3.0.0-alpha.tgz
+
+and use it this way:
+
+```ts
+import * as exif from 'exif-js/lib/esm/main';
+```
+
 ## Contributions
 This is an [open source project](LICENSE.md). Please contribute by forking this repo and issueing a pull request. The project has had notable contributions already, like reading ITPC data.
 
